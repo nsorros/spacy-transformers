@@ -3,6 +3,7 @@ from thinc.api import wrap, layerize, chain, flatten_add_lengths, with_getitem
 from thinc.t2v import Pooling, mean_pool
 from thinc.v2v import Softmax, Affine, Model
 from thinc.neural.util import get_array_module
+from spacy._ml import zero_init, logistic
 from spacy.tokens import Span, Doc
 import numpy
 
@@ -49,6 +50,16 @@ def tok2vec_per_sentence(model_name, cfg):
     )
     return model
 
+@register_model("sigmoid_last_hidden")
+def sigmoid_last_hidden(nr_class, *, exclusive_classes=False, **cfg):
+    width = cfg["token_vector_width"]
+    return chain(
+        get_last_hidden,
+        flatten_add_lengths,
+        Pooling(mean_pool),
+        zero_init(Affine(nr_class, width, drop_factor=0.0)),
+        logistic,
+    )
 
 @register_model("softmax_tanh_class_vector")
 def softmax_tanh_class_vector(nr_class, *, exclusive_classes=True, **cfg):
